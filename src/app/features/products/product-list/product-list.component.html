@@ -1,0 +1,487 @@
+<div class="container-fluid p-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-1">Productos</h2>
+      <p class="text-muted">Gestiona el inventario de productos</p>
+    </div>
+    <button class="btn btn-primary" (click)="openCreateModal()">
+      <i class="fas fa-plus me-2"></i>Nuevo Producto
+    </button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <i class="fas fa-boxes text-primary fa-2x mb-2"></i>
+          <h3 class="mb-0">{{ totalProducts() }}</h3>
+          <p class="text-muted mb-0">Total Productos</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+          <h3 class="mb-0">{{ activeProducts() }}</h3>
+          <p class="text-muted mb-0">Activos</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <i class="fas fa-exclamation-triangle text-warning fa-2x mb-2"></i>
+          <h3 class="mb-0">{{ lowStockProducts() }}</h3>
+          <p class="text-muted mb-0">Stock Bajo</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <i class="fas fa-dollar-sign text-info fa-2x mb-2"></i>
+          <h3 class="mb-0">{{ totalValue() | currency:'USD':'symbol':'1.0-0' }}</h3>
+          <p class="text-muted mb-0">Valor Total</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search and Filter -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="fas fa-search"></i>
+            </span>
+            <input 
+              type="text" 
+              class="form-control" 
+              placeholder="Buscar productos..."
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()">
+          </div>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" [(ngModel)]="categoryFilter" (change)="onFilterChange()">
+            <option value="">Todas las categorías</option>
+            @for (category of categories(); track category.id) {
+              <option [value]="category.id">{{ category.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" [(ngModel)]="statusFilter" (change)="onFilterChange()">
+            <option value="">Todos los estados</option>
+            <option value="true">Activos</option>
+            <option value="false">Inactivos</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" [(ngModel)]="stockFilter" (change)="onFilterChange()">
+            <option value="">Todo el stock</option>
+            <option value="low">Stock bajo</option>
+            <option value="normal">Stock normal</option>
+            <option value="high">Stock alto</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">
+            <i class="fas fa-times me-2"></i>Limpiar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Products Table -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      @if (loading()) {
+        <div class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+          </div>
+          <p class="mt-2 text-muted">Cargando productos...</p>
+        </div>
+      } @else if (filteredProducts().length === 0) {
+        <div class="text-center py-5">
+          <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No se encontraron productos</h5>
+          <p class="text-muted">
+            @if (hasFilters()) {
+              Intenta ajustar los filtros de búsqueda
+            } @else {
+              Crea tu primer producto para comenzar
+            }
+          </p>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Código</th>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (product of filteredProducts(); track product.id) {
+                <tr [class.table-warning]="product.stock <= product.minStock">
+                  <td>
+                    <span class="font-monospace">{{ product.code }}</span>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <i class="fas fa-box text-primary me-2"></i>
+                      <div>
+                        <div class="fw-medium">{{ product.name }}</div>
+                        @if (product.description) {
+                          <small class="text-muted">{{ product.description }}</small>
+                        }
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge bg-secondary">{{ getCategoryName(product.categoryId) }}</span>
+                  </td>
+                  <td>
+                    <span class="fw-medium">{{ product.price | currency:'USD':'symbol':'1.2-2' }}</span>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <span class="fw-medium me-2">{{ product.stock }}</span>
+                      @if (product.stock <= product.minStock) {
+                        <i class="fas fa-exclamation-triangle text-warning" title="Stock bajo"></i>
+                      } @else if (product.stock >= product.maxStock) {
+                        <i class="fas fa-arrow-up text-info" title="Stock alto"></i>
+                      } @else {
+                        <i class="fas fa-check-circle text-success" title="Stock normal"></i>
+                      }
+                    </div>
+                    <small class="text-muted">Min: {{ product.minStock }} | Max: {{ product.maxStock }}</small>
+                  </td>
+                  <td>
+                    <span class="badge" 
+                          [class]="product.isActive ? 'bg-success' : 'bg-secondary'">
+                      {{ product.isActive ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-info" 
+                              (click)="viewKardex(product)"
+                              title="Ver Kardex">
+                        <i class="fas fa-history"></i>
+                      </button>
+                      <button class="btn btn-outline-primary" 
+                              (click)="editProduct(product)"
+                              title="Editar">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn btn-outline-warning" 
+                              (click)="toggleProductStatus(product)"
+                              [title]="product.isActive ? 'Desactivar' : 'Activar'">
+                        <i class="fas" [class]="product.isActive ? 'fa-eye-slash' : 'fa-eye'"></i>
+                      </button>
+                      <button class="btn btn-outline-danger" 
+                              (click)="deleteProduct(product)"
+                              title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        @if (totalPages() > 1) {
+          <nav aria-label="Paginación de productos" class="mt-3">
+            <ul class="pagination justify-content-center">
+              <li class="page-item" [class.disabled]="currentPage() === 1">
+                <button class="page-link" (click)="changePage(currentPage() - 1)" [disabled]="currentPage() === 1">
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+              </li>
+              
+              @for (page of getPageNumbers(); track page) {
+                <li class="page-item" [class.active]="page === currentPage()">
+                  <button class="page-link" (click)="changePage(page)">{{ page }}</button>
+                </li>
+              }
+              
+              <li class="page-item" [class.disabled]="currentPage() === totalPages()">
+                <button class="page-link" (click)="changePage(currentPage() + 1)" [disabled]="currentPage() === totalPages()">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+              </li>
+            </ul>
+          </nav>
+        }
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Product Modal -->
+@if (showModal()) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="fas fa-box me-2"></i>
+            {{ editingProduct() ? 'Editar Producto' : 'Nuevo Producto' }}
+          </h5>
+          <button type="button" class="btn-close" (click)="closeModal()"></button>
+        </div>
+        <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="code" class="form-label">Código *</label>
+                <input 
+                  type="text" 
+                  class="form-control"
+                  id="code"
+                  formControlName="code"
+                  [class.is-invalid]="productForm.get('code')?.invalid && productForm.get('code')?.touched"
+                  placeholder="Código del producto">
+                @if (productForm.get('code')?.invalid && productForm.get('code')?.touched) {
+                  <div class="invalid-feedback">
+                    @if (productForm.get('code')?.errors?.['required']) {
+                      El código es requerido
+                    }
+                  </div>
+                }
+              </div>
+              
+              <div class="col-md-6">
+                <label for="name" class="form-label">Nombre *</label>
+                <input 
+                  type="text" 
+                  class="form-control"
+                  id="name"
+                  formControlName="name"
+                  [class.is-invalid]="productForm.get('name')?.invalid && productForm.get('name')?.touched"
+                  placeholder="Nombre del producto">
+                @if (productForm.get('name')?.invalid && productForm.get('name')?.touched) {
+                  <div class="invalid-feedback">
+                    @if (productForm.get('name')?.errors?.['required']) {
+                      El nombre es requerido
+                    }
+                  </div>
+                }
+              </div>
+              
+              <div class="col-12">
+                <label for="description" class="form-label">Descripción</label>
+                <textarea 
+                  class="form-control"
+                  id="description"
+                  formControlName="description"
+                  rows="2"
+                  placeholder="Descripción del producto"></textarea>
+              </div>
+              
+              <div class="col-md-6">
+                <label for="categoryId" class="form-label">Categoría *</label>
+                <select 
+                  class="form-select"
+                  id="categoryId"
+                  formControlName="categoryId"
+                  [class.is-invalid]="productForm.get('categoryId')?.invalid && productForm.get('categoryId')?.touched">
+                  <option value="">Seleccionar categoría</option>
+                  @for (category of categories(); track category.id) {
+                    <option [value]="category.id">{{ category.name }}</option>
+                  }
+                </select>
+                @if (productForm.get('categoryId')?.invalid && productForm.get('categoryId')?.touched) {
+                  <div class="invalid-feedback">
+                    La categoría es requerida
+                  </div>
+                }
+              </div>
+              
+              <div class="col-md-6">
+                <label for="unit" class="form-label">Unidad</label>
+                <input 
+                  type="text" 
+                  class="form-control"
+                  id="unit"
+                  formControlName="unit"
+                  placeholder="UND, KG, LT, etc.">
+              </div>
+              
+              <div class="col-md-4">
+                <label for="price" class="form-label">Precio *</label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input 
+                    type="number" 
+                    class="form-control"
+                    id="price"
+                    formControlName="price"
+                    step="0.01"
+                    [class.is-invalid]="productForm.get('price')?.invalid && productForm.get('price')?.touched"
+                    placeholder="0.00">
+                </div>
+                @if (productForm.get('price')?.invalid && productForm.get('price')?.touched) {
+                  <div class="invalid-feedback">
+                    @if (productForm.get('price')?.errors?.['required']) {
+                      El precio es requerido
+                    }
+                    @if (productForm.get('price')?.errors?.['min']) {
+                      El precio debe ser mayor a 0
+                    }
+                  </div>
+                }
+              </div>
+              
+              <div class="col-md-4">
+                <label for="cost" class="form-label">Costo</label>
+                <div class="input-group">
+                  <span class="input-group-text">$</span>
+                  <input 
+                    type="number" 
+                    class="form-control"
+                    id="cost"
+                    formControlName="cost"
+                    step="0.01"
+                    placeholder="0.00">
+                </div>
+              </div>
+              
+              <div class="col-md-4">
+                <label for="stock" class="form-label">Stock Actual *</label>
+                <input 
+                  type="number" 
+                  class="form-control"
+                  id="stock"
+                  formControlName="stock"
+                  [class.is-invalid]="productForm.get('stock')?.invalid && productForm.get('stock')?.touched"
+                  placeholder="0">
+                @if (productForm.get('stock')?.invalid && productForm.get('stock')?.touched) {
+                  <div class="invalid-feedback">
+                    @if (productForm.get('stock')?.errors?.['required']) {
+                      El stock es requerido
+                    }
+                    @if (productForm.get('stock')?.errors?.['min']) {
+                      El stock debe ser mayor o igual a 0
+                    }
+                  </div>
+                }
+              </div>
+              
+              <div class="col-md-6">
+                <label for="minStock" class="form-label">Stock Mínimo</label>
+                <input 
+                  type="number" 
+                  class="form-control"
+                  id="minStock"
+                  formControlName="minStock"
+                  placeholder="0">
+              </div>
+              
+              <div class="col-md-6">
+                <label for="maxStock" class="form-label">Stock Máximo</label>
+                <input 
+                  type="number" 
+                  class="form-control"
+                  id="maxStock"
+                  formControlName="maxStock"
+                  placeholder="0">
+              </div>
+              
+              <div class="col-md-6">
+                <label for="barcode" class="form-label">Código de Barras</label>
+                <input 
+                  type="text" 
+                  class="form-control"
+                  id="barcode"
+                  formControlName="barcode"
+                  placeholder="Código de barras">
+              </div>
+              
+              <div class="col-md-6 d-flex align-items-end">
+                <div class="form-check">
+                  <input 
+                    class="form-check-input" 
+                    type="checkbox" 
+                    id="isActive"
+                    formControlName="isActive">
+                  <label class="form-check-label" for="isActive">
+                    Producto activo
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()">
+              Cancelar
+            </button>
+            <button type="submit" 
+                    class="btn btn-primary"
+                    [disabled]="productForm.invalid || submitting()">
+              @if (submitting()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              {{ editingProduct() ? 'Actualizar' : 'Crear' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (showDeleteModal()) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title text-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Confirmar Eliminación
+          </h5>
+          <button type="button" class="btn-close" (click)="cancelDelete()"></button>
+        </div>
+        <div class="modal-body">
+          <p>¿Estás seguro de que deseas eliminar el producto <strong>{{ productToDelete()?.name }}</strong>?</p>
+          <div class="alert alert-warning">
+            <i class="fas fa-info-circle me-2"></i>
+            Esta acción no se puede deshacer.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cancelDelete()">
+            Cancelar
+          </button>
+          <button type="button" 
+                  class="btn btn-danger"
+                  (click)="confirmDelete()"
+                  [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

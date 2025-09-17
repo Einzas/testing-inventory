@@ -1,0 +1,285 @@
+<div class="container-fluid p-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-1">Categorías</h2>
+      <p class="text-muted">Gestiona las categorías de productos</p>
+    </div>
+    <button class="btn btn-primary" (click)="openCreateModal()">
+      <i class="fas fa-plus me-2"></i>Nueva Categoría
+    </button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <i class="fas fa-tags text-primary fa-2x mb-2"></i>
+          <h3 class="mb-0">{{ totalCategories() }}</h3>
+          <p class="text-muted mb-0">Total Categorías</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <i class="fas fa-eye text-success fa-2x mb-2"></i>
+          <h3 class="mb-0">{{ activeCategories() }}</h3>
+          <p class="text-muted mb-0">Activas</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <i class="fas fa-eye-slash text-warning fa-2x mb-2"></i>
+          <h3 class="mb-0">{{ inactiveCategories() }}</h3>
+          <p class="text-muted mb-0">Inactivas</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <i class="fas fa-boxes text-info fa-2x mb-2"></i>
+          <h3 class="mb-0">{{ totalProducts() }}</h3>
+          <p class="text-muted mb-0">Productos</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search and Filter -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="fas fa-search"></i>
+            </span>
+            <input 
+              type="text" 
+              class="form-control" 
+              placeholder="Buscar categorías..."
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()">
+          </div>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" [(ngModel)]="statusFilter" (change)="onFilterChange()">
+            <option value="">Todos los estados</option>
+            <option value="true">Activas</option>
+            <option value="false">Inactivas</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">
+            <i class="fas fa-times me-2"></i>Limpiar Filtros
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Categories Table -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      @if (loading()) {
+        <div class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+          </div>
+          <p class="mt-2 text-muted">Cargando categorías...</p>
+        </div>
+      } @else if (filteredCategories().length === 0) {
+        <div class="text-center py-5">
+          <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No se encontraron categorías</h5>
+          <p class="text-muted">
+            @if (searchTerm || statusFilter) {
+              Intenta ajustar los filtros de búsqueda
+            } @else {
+              Crea tu primera categoría para comenzar
+            }
+          </p>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Productos</th>
+                <th>Estado</th>
+                <th>Fecha Creación</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (category of filteredCategories(); track category.id) {
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <i class="fas fa-tag text-primary me-2"></i>
+                      <span class="fw-medium">{{ category.name }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="text-muted">{{ category.description || 'Sin descripción' }}</span>
+                  </td>
+                  <td>
+                    <span class="badge bg-info">{{ getProductCount(category.id) }} productos</span>
+                  </td>
+                  <td>
+                    <span class="badge" 
+                          [class]="category.isActive ? 'bg-success' : 'bg-secondary'">
+                      {{ category.isActive ? 'Activa' : 'Inactiva' }}
+                    </span>
+                  </td>
+                  <td>
+                    <small class="text-muted">{{ category.createdAt | date:'dd/MM/yyyy' }}</small>
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-primary" 
+                              (click)="editCategory(category)"
+                              title="Editar">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn btn-outline-warning" 
+                              (click)="toggleCategoryStatus(category)"
+                              [title]="category.isActive ? 'Desactivar' : 'Activar'">
+                        <i class="fas" [class]="category.isActive ? 'fa-eye-slash' : 'fa-eye'"></i>
+                      </button>
+                      <button class="btn btn-outline-danger" 
+                              (click)="deleteCategory(category)"
+                              title="Eliminar"
+                              [disabled]="getProductCount(category.id) > 0">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Category Modal -->
+@if (showModal()) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="fas fa-tag me-2"></i>
+            {{ editingCategory() ? 'Editar Categoría' : 'Nueva Categoría' }}
+          </h5>
+          <button type="button" class="btn-close" (click)="closeModal()"></button>
+        </div>
+        <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="name" class="form-label">Nombre *</label>
+              <input 
+                type="text" 
+                class="form-control"
+                id="name"
+                formControlName="name"
+                [class.is-invalid]="categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched"
+                placeholder="Ingresa el nombre de la categoría">
+              @if (categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched) {
+                <div class="invalid-feedback">
+                  @if (categoryForm.get('name')?.errors?.['required']) {
+                    El nombre es requerido
+                  }
+                  @if (categoryForm.get('name')?.errors?.['minlength']) {
+                    El nombre debe tener al menos 2 caracteres
+                  }
+                </div>
+              }
+            </div>
+            
+            <div class="mb-3">
+              <label for="description" class="form-label">Descripción</label>
+              <textarea 
+                class="form-control"
+                id="description"
+                formControlName="description"
+                rows="3"
+                placeholder="Describe la categoría (opcional)"></textarea>
+            </div>
+            
+            <div class="form-check">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="isActive"
+                formControlName="isActive">
+              <label class="form-check-label" for="isActive">
+                Categoría activa
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()">
+              Cancelar
+            </button>
+            <button type="submit" 
+                    class="btn btn-primary"
+                    [disabled]="categoryForm.invalid || submitting()">
+              @if (submitting()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              {{ editingCategory() ? 'Actualizar' : 'Crear' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (showDeleteModal()) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title text-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Confirmar Eliminación
+          </h5>
+          <button type="button" class="btn-close" (click)="cancelDelete()"></button>
+        </div>
+        <div class="modal-body">
+          <p>¿Estás seguro de que deseas eliminar la categoría <strong>{{ categoryToDelete()?.name }}</strong>?</p>
+          <div class="alert alert-warning">
+            <i class="fas fa-info-circle me-2"></i>
+            Esta acción no se puede deshacer.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cancelDelete()">
+            Cancelar
+          </button>
+          <button type="button" 
+                  class="btn btn-danger"
+                  (click)="confirmDelete()"
+                  [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

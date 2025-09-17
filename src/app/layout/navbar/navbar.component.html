@@ -1,0 +1,129 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+  <div class="container-fluid">
+    <!-- Menu Toggle Button -->
+    <button 
+      class="btn btn-link text-white d-lg-none me-2"
+      type="button"
+      (click)="onToggleSidebar()"
+    >
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Brand -->
+    <a class="navbar-brand fw-bold d-flex align-items-center" href="#">
+      <i class="fas fa-invoice me-2"></i>
+      FacturaPro
+    </a>
+
+    <!-- Right side content -->
+    <div class="navbar-nav ms-auto d-flex flex-row align-items-center">
+      <!-- Notifications -->
+      <div class="nav-item me-3" ngbDropdown>
+        <a 
+          class="nav-link text-white position-relative" 
+          href="#" 
+          role="button" 
+          ngbDropdownToggle
+          aria-expanded="false"
+          id="notificationsDropdown"
+        >
+          <i class="fas fa-bell"></i>
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+            3
+            <span class="visually-hidden">notificaciones no leídas</span>
+          </span>
+        </a>
+        <div ngbDropdownMenu aria-labelledby="notificationsDropdown" class="dropdown-menu-end shadow border-0">
+          <h6 class="dropdown-header">
+            <i class="fas fa-bell me-1"></i>
+            Notificaciones
+          </h6>
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item" href="#">
+            <div class="d-flex">
+              <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-triangle text-warning"></i>
+              </div>
+              <div class="flex-grow-1 ms-2">
+                <div class="fw-bold">Stock bajo</div>
+                <div class="small text-muted">Mouse Inalámbrico - Solo 3 unidades</div>
+              </div>
+            </div>
+          </a>
+          <a class="dropdown-item" href="#">
+            <div class="d-flex">
+              <div class="flex-shrink-0">
+                <i class="fas fa-file-invoice text-info"></i>
+              </div>
+              <div class="flex-grow-1 ms-2">
+                <div class="fw-bold">Nueva factura</div>
+                <div class="small text-muted">Factura F001-00000002 generada</div>
+              </div>
+            </div>
+          </a>
+          <a class="dropdown-item" href="#">
+            <div class="d-flex">
+              <div class="flex-shrink-0">
+                <i class="fas fa-user-plus text-success"></i>
+              </div>
+              <div class="flex-grow-1 ms-2">
+                <div class="fw-bold">Nuevo cliente</div>
+                <div class="small text-muted">Cliente registrado exitosamente</div>
+              </div>
+            </div>
+          </a>
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item text-center small" href="#">
+            Ver todas las notificaciones
+          </a>
+        </div>
+      </div>
+
+      <!-- User Menu -->
+      @if (currentUser()) {
+        <div class="nav-item" ngbDropdown>
+          <a 
+            class="nav-link text-white d-flex align-items-center" 
+            href="#" 
+            role="button" 
+            ngbDropdownToggle
+            aria-expanded="false"
+            id="userDropdown"
+          >
+            <div class="user-avatar me-2">
+              <i class="fas fa-user-circle fa-lg"></i>
+            </div>
+            <div class="d-none d-md-block">
+              <div class="fw-semibold">{{ currentUser()!.firstName }} {{ currentUser()!.lastName }}</div>
+              <div class="small opacity-75">{{ currentUser()!.role }}</div>
+            </div>
+          </a>
+          <div ngbDropdownMenu aria-labelledby="userDropdown" class="dropdown-menu-end shadow border-0">
+            <h6 class="dropdown-header">
+              <i class="fas fa-user me-1"></i>
+              Mi Cuenta
+            </h6>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#">
+              <i class="fas fa-user-edit me-2"></i>
+              Editar Perfil
+            </a>
+            <a class="dropdown-item" href="#">
+              <i class="fas fa-cog me-2"></i>
+              Configuración
+            </a>
+            <a class="dropdown-item" href="#">
+              <i class="fas fa-question-circle me-2"></i>
+              Ayuda
+            </a>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item text-danger" (click)="onLogout()">
+              <i class="fas fa-sign-out-alt me-2"></i>
+              Cerrar Sesión
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</nav>

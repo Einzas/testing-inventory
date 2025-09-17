@@ -1,0 +1,104 @@
+<aside class="sidebar" [class.collapsed]="isCollapsed()">
+  <div class="sidebar-content">
+    <!-- User Info -->
+    @if (currentUser()) {
+      <div class="user-info p-3 border-bottom">
+        <div class="d-flex align-items-center">
+          <div class="user-avatar me-3">
+            <i class="fas fa-user-circle fa-2x text-primary"></i>
+          </div>
+          @if (!isCollapsed()) {
+            <div class="user-details">
+              <div class="fw-bold text-dark">{{ currentUser()!.firstName }}</div>
+              <div class="small text-muted">{{ currentUser()!.role }}</div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Navigation Menu -->
+    <nav class="sidebar-nav">
+      <ul class="nav flex-column">
+        @for (item of menuItems; track item.label) {
+          <li class="nav-item">
+            @if (item.children && item.children.length > 0) {
+              <!-- Parent menu item with children -->
+              <a 
+                class="nav-link parent-link d-flex align-items-center justify-content-between"
+                [class.active]="isParentActive(item)"
+                (click)="!isCollapsed() && toggleCollapse(item.label.toLowerCase())"
+                style="cursor: pointer;"
+              >
+                <div class="d-flex align-items-center">
+                  <i [class]="item.icon + ' nav-icon'"></i>
+                  @if (!isCollapsed()) {
+                    <span class="nav-text ms-3">{{ item.label }}</span>
+                  }
+                </div>
+                @if (!isCollapsed()) {
+                  <i class="fas fa-chevron-down collapse-icon" 
+                     [class.rotated]="!isMenuCollapsed(item.label.toLowerCase())"></i>
+                }
+              </a>
+              
+              <!-- Submenu -->
+              @if (!isCollapsed()) {
+                <div [ngbCollapse]="isMenuCollapsed(item.label.toLowerCase())">
+                  <ul class="nav flex-column submenu">
+                    @for (child of item.children; track child.label) {
+                      <li class="nav-item">
+                        <a 
+                          [routerLink]="child.route"
+                          class="nav-link submenu-link d-flex align-items-center justify-content-between"
+                          [class.active]="isActive(child.route!)"
+                        >
+                          <div class="d-flex align-items-center">
+                            <i [class]="child.icon + ' nav-icon'"></i>
+                            <span class="nav-text ms-3">{{ child.label }}</span>
+                          </div>
+                          @if (child.badge) {
+                            <span class="badge" [class]="child.badgeClass || 'bg-primary'">
+                              {{ child.badge }}
+                            </span>
+                          }
+                        </a>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            } @else {
+              <!-- Single menu item -->
+              <a 
+                [routerLink]="item.route"
+                class="nav-link d-flex align-items-center"
+                [class.active]="isActive(item.route!)"
+              >
+                <i [class]="item.icon + ' nav-icon'"></i>
+                @if (!isCollapsed()) {
+                  <span class="nav-text ms-3">{{ item.label }}</span>
+                }
+                @if (item.badge && !isCollapsed()) {
+                  <span class="badge ms-auto" [class]="item.badgeClass || 'bg-primary'">
+                    {{ item.badge }}
+                  </span>
+                }
+              </a>
+            }
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <!-- Footer -->
+    @if (!isCollapsed()) {
+      <div class="sidebar-footer p-3 mt-auto border-top">
+        <div class="small text-muted text-center">
+          <div class="fw-bold">FacturaPro v1.0</div>
+          <div>&copy; 2024 Tu Empresa</div>
+        </div>
+      </div>
+    }
+  </div>
+</aside>

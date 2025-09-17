@@ -1,0 +1,25 @@
+<div class="main-layout">
+  <!-- Navigation Bar -->
+  <app-navbar (toggleSidebar)="onToggleSidebar()"></app-navbar>
+  
+  <!-- Layout Container -->
+  <div class="layout-container">
+    <!-- Sidebar -->
+    <app-sidebar 
+      [isCollapsed]="sidebarCollapsed()"
+      [class.show]="sidebarVisible()"
+    ></app-sidebar>
+    
+    <!-- Main Content Area -->
+    <main class="main-content" [class.sidebar-collapsed]="sidebarCollapsed()">
+      <div class="content-wrapper">
+        <router-outlet></router-outlet>
+      </div>
+    </main>
+  </div>
+  
+  <!-- Mobile Backdrop -->
+  @if (sidebarVisible()) {
+    <div class="mobile-backdrop d-lg-none" (click)="onCloseSidebar()"></div>
+  }
+</div>

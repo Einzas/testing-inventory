@@ -1,0 +1,442 @@
+<div class="container-fluid p-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-1">Clientes</h2>
+      <p class="text-muted">Gestiona la base de datos de clientes</p>
+    </div>
+    <button class="btn btn-primary" (click)="openCreateModal()">
+      <i class="fas fa-plus me-2"></i>Nuevo Cliente
+    </button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <i class="fas fa-users text-primary fa-2x mb-2"></i>
+          <h3 class="mb-0">{{ totalCustomers() }}</h3>
+          <p class="text-muted mb-0">Total Clientes</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <i class="fas fa-user-check text-success fa-2x mb-2"></i>
+          <h3 class="mb-0">{{ activeCustomers() }}</h3>
+          <p class="text-muted mb-0">Activos</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <i class="fas fa-building text-info fa-2x mb-2"></i>
+          <h3 class="mb-0">{{ businessCustomers() }}</h3>
+          <p class="text-muted mb-0">Empresas</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <i class="fas fa-user text-warning fa-2x mb-2"></i>
+          <h3 class="mb-0">{{ individualCustomers() }}</h3>
+          <p class="text-muted mb-0">Personas</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search and Filter -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="fas fa-search"></i>
+            </span>
+            <input 
+              type="text" 
+              class="form-control" 
+              placeholder="Buscar clientes..."
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()">
+          </div>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" [(ngModel)]="typeFilter" (change)="onFilterChange()">
+            <option value="">Todos los tipos</option>
+            <option value="INDIVIDUAL">Persona</option>
+            <option value="BUSINESS">Empresa</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" [(ngModel)]="statusFilter" (change)="onFilterChange()">
+            <option value="">Todos los estados</option>
+            <option value="true">Activos</option>
+            <option value="false">Inactivos</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" [(ngModel)]="documentTypeFilter" (change)="onFilterChange()">
+            <option value="">Todos los documentos</option>
+            <option value="DNI">DNI</option>
+            <option value="RUC">RUC</option>
+            <option value="CE">Carnet Extranjería</option>
+            <option value="PASSPORT">Pasaporte</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">
+            <i class="fas fa-times me-2"></i>Limpiar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customers Table -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      @if (loading()) {
+        <div class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+          </div>
+          <p class="mt-2 text-muted">Cargando clientes...</p>
+        </div>
+      } @else if (filteredCustomers().length === 0) {
+        <div class="text-center py-5">
+          <i class="fas fa-users fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No se encontraron clientes</h5>
+          <p class="text-muted">
+            @if (hasFilters()) {
+              Intenta ajustar los filtros de búsqueda
+            } @else {
+              Crea tu primer cliente para comenzar
+            }
+          </p>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Cliente</th>
+                <th>Documento</th>
+                <th>Tipo</th>
+                <th>Contacto</th>
+                <th>Estado</th>
+                <th>Fecha Registro</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (customer of filteredCustomers(); track customer.id) {
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <i class="fas" 
+                         [class]="customer.type === 'INDIVIDUAL' ? 'fa-user' : 'fa-building'" 
+                         [class.text-primary]="customer.type === 'INDIVIDUAL'"
+                         [class.text-info]="customer.type === 'BUSINESS'" 
+                         [class.me-2]="true"></i>
+                      <div>
+                        <div class="fw-medium">
+                          @if (customer.type === 'INDIVIDUAL') {
+                            {{ customer.firstName }} {{ customer.lastName }}
+                          } @else {
+                            {{ customer.businessName }}
+                          }
+                        </div>
+                        @if (customer.type === 'BUSINESS' && customer.contactPerson) {
+                          <small class="text-muted">Contacto: {{ customer.contactPerson }}</small>
+                        }
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div>
+                      <span class="badge bg-outline-secondary me-1">{{ customer.documentType }}</span>
+                      <span class="font-monospace">{{ customer.documentNumber }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge" 
+                          [class]="customer.type === 'INDIVIDUAL' ? 'bg-primary' : 'bg-info'">
+                      {{ customer.type === 'INDIVIDUAL' ? 'Persona' : 'Empresa' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div>
+                      @if (customer.email) {
+                        <div><i class="fas fa-envelope text-muted me-1"></i>{{ customer.email }}</div>
+                      }
+                      @if (customer.phone) {
+                        <div><i class="fas fa-phone text-muted me-1"></i>{{ customer.phone }}</div>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge" 
+                          [class]="customer.isActive ? 'bg-success' : 'bg-secondary'">
+                      {{ customer.isActive ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </td>
+                  <td>
+                    <small class="text-muted">{{ customer.createdAt | date:'dd/MM/yyyy' }}</small>
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-info" 
+                              (click)="viewCustomer(customer)"
+                              title="Ver Detalles">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                      <button class="btn btn-outline-primary" 
+                              (click)="editCustomer(customer)"
+                              title="Editar">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn btn-outline-warning" 
+                              (click)="toggleCustomerStatus(customer)"
+                              [title]="customer.isActive ? 'Desactivar' : 'Activar'">
+                        <i class="fas" [class]="customer.isActive ? 'fa-user-slash' : 'fa-user-check'"></i>
+                      </button>
+                      <button class="btn btn-outline-danger" 
+                              (click)="deleteCustomer(customer)"
+                              title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Customer Modal -->
+@if (showModal()) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="fas fa-user me-2"></i>
+            {{ editingCustomer() ? 'Editar Cliente' : 'Nuevo Cliente' }}
+          </h5>
+          <button type="button" class="btn-close" (click)="closeModal()"></button>
+        </div>
+        <form [formGroup]="customerForm" (ngSubmit)="onSubmit()">
+          <div class="modal-body">
+            <!-- Customer Type -->
+            <div class="mb-3">
+              <label class="form-label">Tipo de Cliente *</label>
+              <div class="d-flex gap-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" 
+                         id="individual" value="INDIVIDUAL" 
+                         formControlName="type">
+                  <label class="form-check-label" for="individual">
+                    <i class="fas fa-user me-1"></i>Persona
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" 
+                         id="business" value="BUSINESS" 
+                         formControlName="type">
+                  <label class="form-check-label" for="business">
+                    <i class="fas fa-building me-1"></i>Empresa
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Individual Fields -->
+            @if (customerForm.get('type')?.value === 'INDIVIDUAL') {
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="firstName" class="form-label">Nombres *</label>
+                  <input type="text" class="form-control" id="firstName"
+                         formControlName="firstName"
+                         [class.is-invalid]="customerForm.get('firstName')?.invalid && customerForm.get('firstName')?.touched"
+                         placeholder="Nombres">
+                  @if (customerForm.get('firstName')?.invalid && customerForm.get('firstName')?.touched) {
+                    <div class="invalid-feedback">Los nombres son requeridos</div>
+                  }
+                </div>
+                <div class="col-md-6">
+                  <label for="lastName" class="form-label">Apellidos *</label>
+                  <input type="text" class="form-control" id="lastName"
+                         formControlName="lastName"
+                         [class.is-invalid]="customerForm.get('lastName')?.invalid && customerForm.get('lastName')?.touched"
+                         placeholder="Apellidos">
+                  @if (customerForm.get('lastName')?.invalid && customerForm.get('lastName')?.touched) {
+                    <div class="invalid-feedback">Los apellidos son requeridos</div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Business Fields -->
+            @if (customerForm.get('type')?.value === 'BUSINESS') {
+              <div class="row g-3">
+                <div class="col-md-8">
+                  <label for="businessName" class="form-label">Razón Social *</label>
+                  <input type="text" class="form-control" id="businessName"
+                         formControlName="businessName"
+                         [class.is-invalid]="customerForm.get('businessName')?.invalid && customerForm.get('businessName')?.touched"
+                         placeholder="Razón social de la empresa">
+                  @if (customerForm.get('businessName')?.invalid && customerForm.get('businessName')?.touched) {
+                    <div class="invalid-feedback">La razón social es requerida</div>
+                  }
+                </div>
+                <div class="col-md-4">
+                  <label for="contactPerson" class="form-label">Persona de Contacto</label>
+                  <input type="text" class="form-control" id="contactPerson"
+                         formControlName="contactPerson"
+                         placeholder="Nombre del contacto">
+                </div>
+              </div>
+            }
+
+            <!-- Document Information -->
+            <div class="row g-3 mt-2">
+              <div class="col-md-4">
+                <label for="documentType" class="form-label">Tipo Documento *</label>
+                <select class="form-select" id="documentType"
+                        formControlName="documentType"
+                        [class.is-invalid]="customerForm.get('documentType')?.invalid && customerForm.get('documentType')?.touched">
+                  <option value="">Seleccionar</option>
+                  <option value="DNI">DNI</option>
+                  <option value="RUC">RUC</option>
+                  <option value="CE">Carnet Extranjería</option>
+                  <option value="PASSPORT">Pasaporte</option>
+                </select>
+                @if (customerForm.get('documentType')?.invalid && customerForm.get('documentType')?.touched) {
+                  <div class="invalid-feedback">El tipo de documento es requerido</div>
+                }
+              </div>
+              <div class="col-md-8">
+                <label for="documentNumber" class="form-label">Número de Documento *</label>
+                <input type="text" class="form-control" id="documentNumber"
+                       formControlName="documentNumber"
+                       [class.is-invalid]="customerForm.get('documentNumber')?.invalid && customerForm.get('documentNumber')?.touched"
+                       placeholder="Número de documento">
+                @if (customerForm.get('documentNumber')?.invalid && customerForm.get('documentNumber')?.touched) {
+                  <div class="invalid-feedback">
+                    @if (customerForm.get('documentNumber')?.errors?.['required']) {
+                      El número de documento es requerido
+                    }
+                    @if (customerForm.get('documentNumber')?.errors?.['pattern']) {
+                      Formato de documento inválido
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="row g-3 mt-2">
+              <div class="col-md-6">
+                <label for="email" class="form-label">Correo Electrónico</label>
+                <input type="email" class="form-control" id="email"
+                       formControlName="email"
+                       [class.is-invalid]="customerForm.get('email')?.invalid && customerForm.get('email')?.touched"
+                       placeholder="correo@ejemplo.com">
+                @if (customerForm.get('email')?.invalid && customerForm.get('email')?.touched) {
+                  <div class="invalid-feedback">Ingrese un correo válido</div>
+                }
+              </div>
+              <div class="col-md-6">
+                <label for="phone" class="form-label">Teléfono</label>
+                <input type="tel" class="form-control" id="phone"
+                       formControlName="phone"
+                       placeholder="Teléfono">
+              </div>
+            </div>
+
+            <!-- Address -->
+            <div class="mt-3">
+              <label for="address" class="form-label">Dirección</label>
+              <textarea class="form-control" id="address"
+                        formControlName="address"
+                        rows="2"
+                        placeholder="Dirección completa"></textarea>
+            </div>
+
+            <!-- Active Status -->
+            <div class="mt-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" 
+                       id="isActive" formControlName="isActive">
+                <label class="form-check-label" for="isActive">
+                  Cliente activo
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeModal()">
+              Cancelar
+            </button>
+            <button type="submit" 
+                    class="btn btn-primary"
+                    [disabled]="customerForm.invalid || submitting()">
+              @if (submitting()) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              }
+              {{ editingCustomer() ? 'Actualizar' : 'Crear' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (showDeleteModal()) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title text-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Confirmar Eliminación
+          </h5>
+          <button type="button" class="btn-close" (click)="cancelDelete()"></button>
+        </div>
+        <div class="modal-body">
+          <p>¿Estás seguro de que deseas eliminar el cliente <strong>{{ getCustomerDisplayName(customerToDelete()) }}</strong>?</p>
+          <div class="alert alert-warning">
+            <i class="fas fa-info-circle me-2"></i>
+            Esta acción no se puede deshacer.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cancelDelete()">
+            Cancelar
+          </button>
+          <button type="button" 
+                  class="btn btn-danger"
+                  (click)="confirmDelete()"
+                  [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
